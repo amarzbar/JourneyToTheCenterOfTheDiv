@@ -16,33 +16,49 @@ export default function HomeScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Good Morning!🌞 ☕ 🏃‍♂️ 💼</ThemedText>
+        <ThemedText type="title">Good Morning!🌞 ☕ </ThemedText>
       </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
+        <ThemedText type="subtitle">Morning Schedule</ThemedText>
+        
         <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
+          <ThemedText type="defaultSemiBold">Departure</ThemedText> | Departing at:
+        </ThemedText>
+        <ThemedText>
+          Aldershot | 05:00
+        </ThemedText>
+
+        <ThemedText>
+          <ThemedText type="defaultSemiBold">Destination</ThemedText> | Arrival
+        </ThemedText>
+        <ThemedText>
+          Union | 08:30
         </ThemedText>
       </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
+        <ThemedText type="subtitle">Evening Schedule</ThemedText>
+        
         <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
+          <ThemedText type="defaultSemiBold">Departure</ThemedText> | Departing at:
+        </ThemedText>
+        <ThemedText>
+          Union | 19:45
+        </ThemedText>
+
+        <ThemedText>
+          <ThemedText type="defaultSemiBold">Destination</ThemedText> | Arrival
+        </ThemedText>
+        <ThemedText>
+          Aldershot | 22:31
         </ThemedText>
       </ThemedView>
+
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
+        <ThemedText type="subtitle">Alarm Notifications</ThemedText>
         <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+          Alarm: 18:20, 22:21 (10 minutes prior to arrival)
         </ThemedText>
       </ThemedView>
     </ParallaxScrollView>
