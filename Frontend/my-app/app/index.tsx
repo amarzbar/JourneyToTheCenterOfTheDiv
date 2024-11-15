@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Text, View, Button } from "react-native";
 import { Picker as RNPicker } from '@react-native-picker/picker'; // Import Picker
 import { stationsByLine } from './stations.js'; // Import the stations dictionary
-//import { getTrainServices } from './trainservice.js'; // Import getTrainServices function
 import { getTrainServices } from './trains.js';
 
 export default function Index() {
@@ -37,9 +36,9 @@ export default function Index() {
       let newGreeting = "";
       if (hours >= 5 && hours < 12) {
         newGreeting = "Good morning!";
-      } else if (hours >= 12 && hours < 18) {
+      } else if (hours >= 12 && hours < 16) {
         newGreeting = "Good afternoon!";
-      } else if (hours >= 18 && hours < 24) {
+      } else if (hours >= 16 && hours < 20) {
         newGreeting = "Good evening!";
       } else {
         newGreeting = "Good night!"; // Late night greeting
@@ -51,28 +50,55 @@ export default function Index() {
     return () => clearInterval(interval);
   }, []);
 
+  // Helper function to map station name to station code
+  const getStationCode = (stationName) => {
+    // Directly return the code for "Union" station
+    if (stationName === "Union") {
+      return "UN";
+    }
+  
+    // Otherwise, look up the station in the stationsByLine dictionary
+    for (const line in stationsByLine) {
+      const station = stationsByLine[line].find(station => station.stationName === stationName);
+      if (station) return station.stationCode; // Return the station code
+    }
+  
+    return null; // Return null if no matching station is found
+  };
+
   // Function to fetch and update train services for morning
   const getMorningTrainServices = async () => {
-    const date = "2024-11-04"; // Hardcoded date (could be dynamic)
-    const services = await getTrainServices(morningDeparture, morningDestination, date);
-    setMorningTrainServices(services);
+    const date = "2024-11-15"; // Hardcoded date (could be dynamic)
+    const departureCode = getStationCode(morningDeparture); // Convert name to code
+    const destinationCode = getStationCode(morningDestination); // Convert name to code
+    if (departureCode && destinationCode) {
+      const services = await getTrainServices(departureCode, destinationCode, date);
+      setMorningTrainServices(services);
+    } else {
+      console.error("Invalid stations selected.");
+      setMorningTrainServices([]); // Set empty array if no valid stations
+    }
   };
 
   // Function to fetch and update train services for evening
   const getEveningTrainServices = async () => {
-    const date = "2024-11-04"; // Hardcoded date (could be dynamic)
-    const services = await getTrainServices(eveningDeparture, eveningDestination, date);
-    setEveningTrainServices(services);
+    const date = "2024-11-15"; // Hardcoded date (could be dynamic)
+    const departureCode = getStationCode(eveningDeparture); // Convert name to code
+    const destinationCode = getStationCode(eveningDestination); // Convert name to code
+    if (departureCode && destinationCode) {
+      const services = await getTrainServices(departureCode, destinationCode, date);
+      setEveningTrainServices(services);
+    } else {
+      console.error("Invalid stations selected.");
+      setEveningTrainServices([]); // Set empty array if no valid stations
+    }
   };
 
-  // Trigger API call when any departure or destination is changed
-  useEffect(() => {
+  // Function to handle the search button press
+  const handleSearch = () => {
     getMorningTrainServices();
-  }, [morningDeparture, morningDestination]);
-
-  useEffect(() => {
     getEveningTrainServices();
-  }, [eveningDeparture, eveningDestination]);
+  };
 
   return (
     <View style={{ flex: 1, justifyContent: "flex-start", alignItems: "flex-start", padding: 20 }}>
@@ -93,8 +119,28 @@ export default function Index() {
       </RNPicker>
 
       {/* Morning Schedule */}
-      <Text style={{ fontSize: 20, marginBottom: 10 }}>Morning Schedule</Text>
-      
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+        <Text style={{ fontSize: 20 }}>Morning Schedule</Text>
+
+        {/* Morning Train Service Dropdown */}
+        {morningTrainServices && morningTrainServices.length > 0 ? (
+          <RNPicker
+            style={{ height: 50, width: 200, marginLeft: 10 }}
+            onValueChange={(selectedService) => console.log(selectedService)} // Handle selection if needed
+          >
+            {morningTrainServices.map((service, index) => (
+              <RNPicker.Item
+                key={index}
+                label={`${service.departure_time} - ${service.arrival_time} (${service.line_display})`}
+                value={service} // You can store the full service object if you need to use it
+              />
+            ))}
+          </RNPicker>
+        ) : (
+          <Text> No morning trains available.</Text>
+        )}
+      </View>
+
       {/* Departure dropdown for morning */}
       <Text style={{ fontSize: 18 }}>Departure Station</Text>
       <RNPicker
@@ -119,21 +165,29 @@ export default function Index() {
         ))}
       </RNPicker>
 
-      {/* Display fetched morning train services */}
-      <Text style={{ fontSize: 18 }}>Morning Train Services:</Text>
-      {morningTrainServices ? (
-        <View>
-          {morningTrainServices.map((service, index) => (
-            <Text key={index}>{service.departure_time} - {service.arrival_time} ({service.line_display})</Text>
-          ))}
-        </View>
-      ) : (
-        <Text>No morning trains available.</Text>
-      )}
-
       {/* Evening Schedule */}
-      <Text style={{ fontSize: 20, marginVertical: 20 }}>Evening Schedule</Text>
-      
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 20 }}>
+        <Text style={{ fontSize: 20 }}>Evening Schedule</Text>
+
+        {/* Evening Train Service Dropdown */}
+        {eveningTrainServices && eveningTrainServices.length > 0 ? (
+          <RNPicker
+            style={{ height: 50, width: 200, marginLeft: 10 }}
+            onValueChange={(selectedService) => console.log(selectedService)} // Handle selection if needed
+          >
+            {eveningTrainServices.map((service, index) => (
+              <RNPicker.Item
+                key={index}
+                label={`${service.departure_time} - ${service.arrival_time} (${service.line_display})`}
+                value={service} // You can store the full service object if you need to use it
+              />
+            ))}
+          </RNPicker>
+        ) : (
+          <Text> No evening trains available.</Text>
+        )}
+      </View>
+
       {/* Departure dropdown for evening */}
       <Text style={{ fontSize: 18 }}>Departure Station</Text>
       <RNPicker
@@ -158,17 +212,8 @@ export default function Index() {
         ))}
       </RNPicker>
 
-      {/* Display fetched evening train services */}
-      <Text style={{ fontSize: 18 }}>Evening Train Services:</Text>
-      {eveningTrainServices ? (
-        <View>
-          {eveningTrainServices.map((service, index) => (
-            <Text key={index}>{service.departure_time} - {service.arrival_time} ({service.line_display})</Text>
-          ))}
-        </View>
-      ) : (
-        <Text>No evening trains available.</Text>
-      )}
+      {/* Search Button */}
+      <Button title="Search for Train Services" onPress={handleSearch} />
     </View>
   );
 }

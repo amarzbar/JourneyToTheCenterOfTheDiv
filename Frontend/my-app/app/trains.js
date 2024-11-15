@@ -3,9 +3,11 @@ export async function getTrainServices(departure, destination, date) {
     // Construct the URL using template literals
     const scheduleURL = `https://api.gotransit.com/v2/schedules/en/timetable/all?fromStop=${encodeURIComponent(departure)}&toStop=${encodeURIComponent(destination)}&date=${encodeURIComponent(date)}`;
 
+    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+
     try {
         // Make the request to the API
-        const response = await fetch(scheduleURL);
+        const response = await fetch(proxyUrl + scheduleURL);
 
         // Check if the request was successful (status code 200)
         if (response.ok) {
@@ -40,7 +42,8 @@ export async function getTrainServices(departure, destination, date) {
             if (trainServices.length === 0) {
                 console.log(`There are no trains scheduled for ${date} from ${departure} to ${destination}.`);
             }
-
+            
+            console.log(trainServices);
             return trainServices;
         } else {
             console.log(`Error: ${response.status}`);
@@ -52,21 +55,21 @@ export async function getTrainServices(departure, destination, date) {
     }
 }
 
-// Example usage
-const departure = "ME";
-const destination = "UN";
-const date = "2024-11-04";
+// // Example usage
+// const departure = "ME";
+// const destination = "UN";
+// const date = "2024-11-04";
 
-// Get morning train services
-getTrainServices(departure, destination, date).then(morningTrainServices => {
-    morningTrainServices.forEach(service => {
-        console.log(service);
-    });
-});
+// // Get morning train services
+// getTrainServices(departure, destination, date).then(morningTrainServices => {
+//     morningTrainServices.forEach(service => {
+//         console.log(service);
+//     });
+// });
 
-// Get evening train services
-getTrainServices(destination, departure, date).then(eveningTrainServices => {
-    eveningTrainServices.forEach(service => {
-        console.log(service);
-    });
-});
+// // Get evening train services
+// getTrainServices(destination, departure, date).then(eveningTrainServices => {
+//     eveningTrainServices.forEach(service => {
+//         console.log(service);
+//     });
+// });
