@@ -1,3 +1,4 @@
+
 export async function getTrainServices(departure, destination, date) {
     // Construct the URL using template literals
     const scheduleURL = `https://api.gotransit.com/v2/schedules/en/timetable/all?fromStop=${encodeURIComponent(departure)}&toStop=${encodeURIComponent(destination)}&date=${encodeURIComponent(date)}`;

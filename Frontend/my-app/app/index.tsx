@@ -2,19 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Text, View, Button } from "react-native";
 import { Picker as RNPicker } from '@react-native-picker/picker'; // Import Picker
 import { stationsByLine } from './stations.js'; // Import the stations dictionary
-
-// Fetch train services from the API
-const fetchTrainServices = async (departure, destination, date) => {
-  const url = `http://localhost:5000/api/train-services?departure=${departure}&destination=${destination}&date=${date}`;
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    return data; // Return the parsed JSON
-  } catch (error) {
-    console.error("Error fetching train services:", error);
-    return null; // Return null if there's an error
-  }
-};
+//import { getTrainServices } from './trainservice.js'; // Import getTrainServices function
+import { getTrainServices } from './trains.js';
 
 export default function Index() {
   // State for current time and greeting
@@ -65,14 +54,14 @@ export default function Index() {
   // Function to fetch and update train services for morning
   const getMorningTrainServices = async () => {
     const date = "2024-11-04"; // Hardcoded date (could be dynamic)
-    const services = await fetchTrainServices(morningDeparture, morningDestination, date);
+    const services = await getTrainServices(morningDeparture, morningDestination, date);
     setMorningTrainServices(services);
   };
 
   // Function to fetch and update train services for evening
   const getEveningTrainServices = async () => {
     const date = "2024-11-04"; // Hardcoded date (could be dynamic)
-    const services = await fetchTrainServices(eveningDeparture, eveningDestination, date);
+    const services = await getTrainServices(eveningDeparture, eveningDestination, date);
     setEveningTrainServices(services);
   };
 
