@@ -1,38 +1,60 @@
 import React, { useState, useEffect } from "react";
-import { Text, View, Button, TouchableOpacity } from "react-native";
-import { Picker as RNPicker } from '@react-native-picker/picker'; // Import Picker
-import { stationsByLine } from './stations.js'; // Import the stations dictionary
+import { Text, View, Button, TouchableOpacity, Linking } from "react-native";
+import { Picker as RNPicker } from '@react-native-picker/picker'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import { stationsByLine } from './stations.js'; 
 import { getTrainServices } from './trains.js';
 
 export default function Index() {
-  // State for current time and greeting
   const [currentTime, setCurrentTime] = useState("");
   const [greeting, setGreeting] = useState("");
-
-  // State for selected line and stations for both schedules
   const [selectedLine, setSelectedLine] = useState("Lakeshore West");
-  const [morningDeparture, setMorningDeparture] = useState("Aldershot"); // Default to Aldershot
-  const [morningDestination, setMorningDestination] = useState("Union"); // Default to Union
+
+  // Set default stations as Aldershot (departure) and Union (destination)
+  const [morningDeparture, setMorningDeparture] = useState("Aldershot");
+  const [morningDestination, setMorningDestination] = useState("Union");
   const [eveningDeparture, setEveningDeparture] = useState("Union");
   const [eveningDestination, setEveningDestination] = useState("Aldershot");
 
-  // State to store the fetched train services
   const [morningTrainServices, setMorningTrainServices] = useState(null);
   const [eveningTrainServices, setEveningTrainServices] = useState(null);
 
-  // Update the current time every second
+  // Load saved state from AsyncStorage when the component mounts
   useEffect(() => {
+    const loadSavedState = async () => {
+      try {
+        const savedState = await AsyncStorage.getItem('trainState');
+        if (savedState) {
+          const {
+            selectedLine,
+            morningDeparture,
+            morningDestination,
+            eveningDeparture,
+            eveningDestination
+          } = JSON.parse(savedState);
+
+          // Use saved values if available, otherwise fallback to defaults
+          setSelectedLine(selectedLine || "Lakeshore West");
+          setMorningDeparture(morningDeparture || "Aldershot");
+          setMorningDestination(morningDestination || "Union");
+          setEveningDeparture(eveningDeparture || "Union");
+          setEveningDestination(eveningDestination || "Aldershot");
+        }
+      } catch (error) {
+        console.error("Failed to load saved state", error);
+      }
+    };
+
+    loadSavedState();
+
     const interval = setInterval(() => {
       const now = new Date();
       const hours = now.getHours();
       const minutes = now.getMinutes();
       const seconds = now.getSeconds();
-
-      // Format time as "HH:MM:SS"
       const formattedTime = `${hours}:${minutes < 10 ? "0" + minutes : minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
       setCurrentTime(formattedTime);
 
-      // Update the greeting based on the current hour
       let newGreeting = "";
       if (hours >= 5 && hours < 12) {
         newGreeting = "Good morning!";
@@ -41,16 +63,30 @@ export default function Index() {
       } else if (hours >= 16 && hours < 20) {
         newGreeting = "Good evening!";
       } else {
-        newGreeting = "Good night!"; // Late night greeting
+        newGreeting = "Working late!";
       }
       setGreeting(newGreeting + " It is");
     }, 1000);
 
-    // Clean up the interval on component unmount
     return () => clearInterval(interval);
   }, []);
 
-  // Helper function to map station name to station code
+  const saveStateToAsyncStorage = async () => {
+    const stateToSave = {
+      selectedLine,
+      morningDeparture,
+      morningDestination,
+      eveningDeparture,
+      eveningDestination,
+    };
+
+    try {
+      await AsyncStorage.setItem('trainState', JSON.stringify(stateToSave));
+    } catch (error) {
+      console.error("Failed to save state", error);
+    }
+  };
+
   const getStationCode = (stationName) => {
     if (stationName === "Union") {
       return "UN";
@@ -62,68 +98,55 @@ export default function Index() {
     return null;
   };
 
-  // Function to fetch and update train services for morning
   const getMorningTrainServices = async () => {
     const date = "2024-11-15"; 
     const departureCode = getStationCode(morningDeparture); 
     const destinationCode = getStationCode(morningDestination); 
-    console.log(`Fetching services from ${departureCode} to ${destinationCode} on ${date}`);
     if (departureCode && destinationCode) {
       const services = await getTrainServices(departureCode, destinationCode, date);
-      console.log("Morning Services:", services);
       setMorningTrainServices(services);
     } else {
-      console.error("Invalid stations selected.");
       setMorningTrainServices([]);
     }
   };
 
-  // Function to fetch and update train services for evening
   const getEveningTrainServices = async () => {
     const date = "2024-11-15"; 
     const departureCode = getStationCode(eveningDeparture); 
     const destinationCode = getStationCode(eveningDestination); 
-    console.log(`Fetching services from ${departureCode} to ${destinationCode} on ${date}`);
     if (departureCode && destinationCode) {
       const services = await getTrainServices(departureCode, destinationCode, date);
-      console.log("Evening Services:", services);
       setEveningTrainServices(services);
     } else {
-      console.error("Invalid stations selected.");
       setEveningTrainServices([]);
     }
   };
 
-  // Function to handle the search button press
   const handleSearch = async () => {
-    console.log("Search Button Pressed");
-    // Log the selected stations
-    console.log(`Selected stations for morning: ${morningDeparture} to ${morningDestination}`);
-    console.log(`Selected stations for evening: ${eveningDeparture} to ${eveningDestination}`);
-    // Make API calls with the updated state values
     await getMorningTrainServices();
     await getEveningTrainServices();
+    saveStateToAsyncStorage(); // Save state to AsyncStorage whenever the search is triggered
   };
 
-  // Function to swap departure and destination stations
   const swapStations = (isMorning) => {
     if (isMorning) {
-      // Use a temp variable to hold one of the values temporarily
       const temp = morningDeparture;
       setMorningDeparture(morningDestination);
       setMorningDestination(temp);
     } else {
-      // Use a temp variable to hold one of the values temporarily
       const temp = eveningDeparture;
       setEveningDeparture(eveningDestination);
       setEveningDestination(temp);
     }
   };
 
-  // Function to copy the reverse trip for the evening schedule
   const copyReverseEveningTrip = () => {
     setEveningDeparture(morningDestination);
     setEveningDestination(morningDeparture);
+  };
+
+  const openCorsDemo = () => {
+    Linking.openURL('https://cors-anywhere.herokuapp.com/corsdemo');
   };
 
   return (
@@ -132,11 +155,10 @@ export default function Index() {
         {greeting} {currentTime}
       </Text>
 
-      {/* Line Selection Dropdown */}
       <Text style={{ fontSize: 20 }}>Select Line</Text>
       <RNPicker
         selectedValue={selectedLine}
-        style={{ height: 30, width: 200, marginBottom: 20 }} // Reduce height here
+        style={{ height: 50, width: 200, marginBottom: 20 }}
         onValueChange={(itemValue) => setSelectedLine(itemValue)}
       >
         {Object.keys(stationsByLine).map((line) => (
@@ -151,7 +173,7 @@ export default function Index() {
           <Text> Click search to fetch schedules</Text>
         ) : morningTrainServices.length > 0 ? (
           <RNPicker
-            style={{ height: 30, width: 200, marginLeft: 10 }} // Reduce height here
+            style={{ height: 50, width: 200, marginLeft: 10 }}
             onValueChange={(selectedService) => console.log(selectedService)}
           >
             {morningTrainServices.map((service, index) => (
@@ -167,13 +189,13 @@ export default function Index() {
         )}
       </View>
 
-      {/* Departure and Destination for morning in a row */}
+      {/* Departure and Destination for morning */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
         <View style={{ marginRight: 5 }}>
-          <Text style={{ fontSize: 18 }}>Departure Station</Text>
+          <Text style={{ fontSize: 18 }}>Departure</Text>
           <RNPicker
             selectedValue={morningDeparture}
-            style={{ height: 30, width: 150 }} // Reduce height here
+            style={{ height: 50, width: 150 }}
             onValueChange={(itemValue) => setMorningDeparture(itemValue)}
           >
             {stationsByLine[selectedLine].map((station) => (
@@ -183,10 +205,10 @@ export default function Index() {
         </View>
 
         <View style={{ marginLeft: 5 }}>
-          <Text style={{ fontSize: 18 }}>Destination Station</Text>
+          <Text style={{ fontSize: 18 }}>Destination</Text>
           <RNPicker
             selectedValue={morningDestination}
-            style={{ height: 30, width: 150 }} // Reduce height here
+            style={{ height: 50, width: 150 }}
             onValueChange={(itemValue) => setMorningDestination(itemValue)}
           >
             {stationsByLine[selectedLine].map((station) => (
@@ -203,7 +225,7 @@ export default function Index() {
           <Text> Click search to fetch schedules</Text>
         ) : eveningTrainServices.length > 0 ? (
           <RNPicker
-            style={{ height: 30, width: 200, marginLeft: 10 }} // Reduce height here
+            style={{ height: 50, width: 200, marginLeft: 10 }}
             onValueChange={(selectedService) => console.log(selectedService)}
           >
             {eveningTrainServices.map((service, index) => (
@@ -219,13 +241,13 @@ export default function Index() {
         )}
       </View>
 
-      {/* Departure and Destination for evening in a row */}
+      {/* Departure and Destination for evening */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
         <View style={{ marginRight: 5 }}>
-          <Text style={{ fontSize: 18 }}>Departure Station</Text>
+          <Text style={{ fontSize: 18 }}>Departure</Text>
           <RNPicker
             selectedValue={eveningDeparture}
-            style={{ height: 30, width: 150 }} // Reduce height here
+            style={{ height: 50, width: 150 }}
             onValueChange={(itemValue) => setEveningDeparture(itemValue)}
           >
             {stationsByLine[selectedLine].map((station) => (
@@ -235,10 +257,10 @@ export default function Index() {
         </View>
 
         <View style={{ marginLeft: 5 }}>
-          <Text style={{ fontSize: 18 }}>Destination Station</Text>
+          <Text style={{ fontSize: 18 }}>Destination</Text>
           <RNPicker
             selectedValue={eveningDestination}
-            style={{ height: 30, width: 150 }} // Reduce height here
+            style={{ height: 50, width: 150 }}
             onValueChange={(itemValue) => setEveningDestination(itemValue)}
           >
             {stationsByLine[selectedLine].map((station) => (
@@ -247,18 +269,19 @@ export default function Index() {
           </RNPicker>
         </View>
       </View>
-      
-      {/* Buttons at the bottom side by side with a small gap */}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginTop: 20 }}>
-        {/* Copy Reverse Trip Button */}
-        <Button title="Click for round-trip" onPress={copyReverseEveningTrip} style={{ marginRight: 30 }} />
-        
-        {/* Spacer (view with width to create a gap between the buttons) */}
-        <View style={{ width: 20 }} />  {/* You can adjust the width as needed */}
 
-        {/* Search Button */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginTop: 20 }}>
+        <Button title="Click for round-trip" onPress={copyReverseEveningTrip} style={{ marginRight: 30 }} />
+        <View style={{ width: 20 }} />
         <Button title="Search Train Schedules" onPress={handleSearch} />
       </View>
+
+      {/* Link to CORS Anywhere demo */}
+      <TouchableOpacity onPress={openCorsDemo} style={{ marginTop: 30 }}>
+        <Text style={{ color: 'blue', textDecorationLine: 'underline' }}>
+          Debug
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
